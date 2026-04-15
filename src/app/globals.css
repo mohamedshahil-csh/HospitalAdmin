@@ -2,26 +2,382 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Light Mode Palette */
+    --bg-primary: #F8FAFC;
+    --bg-secondary: #FFFFFF;
+    --bg-tertiary: #F1F5F9;
+    --bg-hover: #F8FAFC;
+    --bg-active: #EFF6FF;
+    --bg-input: #FFFFFF;
+    --bg-card: #FFFFFF;
+    --bg-modal: #FFFFFF;
+
+    --border-primary: #E2E8F0;
+    --border-secondary: #F1F5F9;
+    --border-input: #CBD5E1;
+
+    --text-primary: #111827;
+    --text-secondary: #374151;
+    --text-tertiary: #6B7280;
+    --text-muted: #9CA3AF;
+    --text-inverse: #FFFFFF;
+
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  }
+
+  .dark {
+    /* Dark Mode Palette — Deep navy medical theme */
+    --bg-primary: #0B1120;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1E293B;
+    --bg-hover: #1E293B;
+    --bg-active: #172554;
+    --bg-input: #1E293B;
+    --bg-card: #111827;
+    --bg-modal: #1E293B;
+
+    --border-primary: #1E293B;
+    --border-secondary: #334155;
+    --border-input: #475569;
+
+    --text-primary: #F1F5F9;
+    --text-secondary: #CBD5E1;
+    --text-tertiary: #94A3B8;
+    --text-muted: #64748B;
+    --text-inverse: #0B1120;
+
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  }
+
+  * {
+    transition-property: background-color, border-color, color;
+    transition-timing-function: ease;
+    transition-duration: 150ms;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+
+  /* ===== KPI Card ===== */
+  .kpi-card {
+    @apply rounded-xl p-4 transition-all duration-200 hover:shadow-md;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ===== Badge ===== */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold leading-tight;
+  }
+
+  /* ===== Data Table ===== */
+  .data-table {
+    @apply w-full text-sm text-left;
+  }
+
+  .data-table thead {
+    background-color: var(--bg-tertiary);
+  }
+
+  .data-table th {
+    @apply px-4 py-3 text-[11px] font-semibold uppercase tracking-wider;
+    color: var(--text-tertiary);
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .data-table td {
+    @apply px-4 py-3;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-secondary);
+  }
+
+  .data-table tbody tr:hover {
+    background-color: var(--bg-hover);
+  }
+
+  /* ===== ETA Countdown Flash ===== */
+  .eta-countdown {
+    animation: flash-eta 1s infinite;
+  }
+
+  @keyframes flash-eta {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /* ===== Vital Displays ===== */
+  .vital-normal {
+    @apply text-green-500;
+  }
+
+  .vital-warning {
+    @apply text-amber-500;
+  }
+
+  .vital-critical {
+    @apply text-red-500 font-bold;
+  }
+
+  /* ===== Pulse Dot ===== */
+  .animate-pulse-dot {
+    animation: pulseDot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulseDot {
+
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    50% {
+      opacity: 0.5;
+      transform: scale(1.2);
+    }
+  }
+
+  /* ===== TV Mode (for ED Pre-Alert Board) ===== */
+  .tv-mode {
+    background-color: #000000 !important;
+    min-height: 100vh;
+  }
+
+  /* ===== Custom Scrollbar ===== */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full;
+    background-color: var(--border-input);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text-muted);
+  }
+
+  /* ===== Dark mode specific overrides for component colors ===== */
+  .dark .bg-white {
+    background-color: var(--bg-secondary) !important;
+  }
+
+  .dark .bg-gray-50 {
+    background-color: var(--bg-tertiary) !important;
+  }
+
+  .dark .bg-gray-100 {
+    background-color: var(--bg-tertiary) !important;
+  }
+
+  .dark .border-gray-100 {
+    border-color: var(--border-primary) !important;
+  }
+
+  .dark .border-gray-200 {
+    border-color: var(--border-primary) !important;
+  }
+
+  .dark .border-gray-300 {
+    border-color: var(--border-input) !important;
+  }
+
+  .dark .text-gray-900 {
+    color: var(--text-primary) !important;
+  }
+
+  .dark .text-gray-800 {
+    color: var(--text-primary) !important;
+  }
+
+  .dark .text-gray-700 {
+    color: var(--text-secondary) !important;
+  }
+
+  .dark .text-gray-600 {
+    color: var(--text-tertiary) !important;
+  }
+
+  .dark .text-gray-500 {
+    color: var(--text-muted) !important;
+  }
+
+  .dark .text-gray-400 {
+    color: #64748B !important;
+  }
+
+  .dark .shadow-sm {
+    box-shadow: var(--shadow-sm) !important;
+  }
+
+  .dark .shadow-md,
+  .dark .hover\:shadow-md:hover {
+    box-shadow: var(--shadow-md) !important;
+  }
+
+  .dark .shadow-lg,
+  .dark .hover\:shadow-lg:hover {
+    box-shadow: var(--shadow-lg) !important;
+  }
+
+  .dark .hover\:bg-gray-50:hover {
+    background-color: var(--bg-tertiary) !important;
+  }
+
+  .dark .hover\:bg-gray-100:hover {
+    background-color: var(--bg-tertiary) !important;
+  }
+
+  .dark .hover\:bg-gray-200:hover {
+    background-color: #334155 !important;
+  }
+
+  /* Dark mode form inputs */
+  .dark input,
+  .dark select,
+  .dark textarea {
+    background-color: var(--bg-input) !important;
+    border-color: var(--border-input) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: var(--text-muted) !important;
+  }
+
+  .dark input:focus,
+  .dark select:focus,
+  .dark textarea:focus {
+    border-color: #3B82F6 !important;
+  }
+
+  /* Dark mode modals & backdrops */
+  .dark .bg-black\/50 {
+    background-color: rgba(0, 0, 0, 0.7) !important;
+  }
+
+  .dark .bg-black\/30 {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+  }
+
+  /* ===== Medical background ===== */
+  .bg-medical-bg {
+    background-color: var(--bg-primary);
+  }
+
+  /* ===== Sidebar dark mode ===== */
+  .dark .sidebar-bg {
+    background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%) !important;
+  }
+
+  .sidebar-bg {
+    background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);
+  }
+
+  /* ===== Recharts dark mode ===== */
+  .dark .recharts-cartesian-grid line {
+    stroke: #334155 !important;
+  }
+
+  .dark .recharts-text {
+    fill: #94A3B8 !important;
+  }
+
+  .dark .recharts-tooltip-wrapper .recharts-default-tooltip {
+    background-color: #1E293B !important;
+    border-color: #475569 !important;
+    color: #F1F5F9 !important;
+  }
+
+  /* ===== Print styles ===== */
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+
+    body {
+      background: white !important;
+      color: black !important;
+    }
+  }
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .animate-count-up {
+    animation: countUp 0.6s ease-out;
+  }
+
+  @keyframes countUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

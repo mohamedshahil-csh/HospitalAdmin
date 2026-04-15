@@ -2,11 +2,11 @@
 
 import React, { useState } from "react";
 import {
-  Plus, Search, Filter, Eye, X, MapPin, Phone, Clock,
-  ChevronRight, ChevronLeft, Check, Ambulance, User,
-  AlertTriangle, FileText, Send, Loader2, Navigation,
+  Plus, Search, Eye, X, MapPin,
+  ChevronRight, ChevronLeft, Check, Ambulance,
+  Send, Navigation, Loader2,
 } from "lucide-react";
-import { cn, getTriageColor, formatDateTime } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { URGENCY_LEVELS, BLOOD_GROUPS, TRIP_STATUS_COLORS } from "@/lib/constants";
 import { mockTrips, mockVehicles } from "@/lib/mock-data";
 import toast from "react-hot-toast";
@@ -21,8 +21,6 @@ export default function BookingPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [showDetailPanel, setShowDetailPanel] = useState<string | null>(null);
   const [showTrackModal, setShowTrackModal] = useState<string | null>(null);
-
-  // Form state
   const [form, setForm] = useState({
     incidentType: "Emergency" as "Emergency" | "IFT",
     urgency: "RED",
@@ -33,17 +31,9 @@ export default function BookingPage() {
     age: "",
     gender: "Male",
     bloodGroup: "Unknown",
-    informerName: "",
-    informerRelation: "",
-    informerPhone: "",
     isMLC: false,
     firNumber: "",
     policeStation: "",
-    officerName: "",
-    originHospital: "",
-    destinationHospital: "",
-    transferReason: "",
-    patientSummary: "",
     pickupAddress: "City General Hospital, 123 MG Road, Koramangala, Bangalore",
     landmark: "",
     selectedVehicle: "",
@@ -51,32 +41,57 @@ export default function BookingPage() {
   });
 
   const filteredTrips = mockTrips.filter((trip) => {
-    const matchesSearch = trip.patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch =
+      trip.patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       trip.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "All" || trip.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const handleSubmit = () => {
-    toast.success("Ambulance booking confirmed! Trip ID: TRP-20260415-005");
-    setShowWizard(false);
-    setWizardStep(1);
-  };
-
   const availableVehicles = mockVehicles.filter((v) => v.status === "Idle" || v.status === "At This Hospital");
 
   const stepLabels = ["Incident", "Patient", "Pickup", "Vehicle", "Confirm"];
 
+  const handleSubmit = () => {
+    toast.success("Ambulance booking confirmed! Trip ID: TRP-20260415-005");
+    setShowWizard(false);
+    setWizardStep(1);
+    // Reset form if needed
+    setForm({
+      incidentType: "Emergency",
+      urgency: "RED",
+      numberOfPatients: 1,
+      notes: "",
+      patientName: "",
+      mrn: "",
+      age: "",
+      gender: "Male",
+      bloodGroup: "Unknown",
+      isMLC: false,
+      firNumber: "",
+      policeStation: "",
+      pickupAddress: "City General Hospital, 123 MG Road, Koramangala, Bangalore",
+      landmark: "",
+      selectedVehicle: "",
+      autoDispatch: true,
+    });
+  };
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Ambulance Booking</h1>
           <p className="text-sm text-gray-500 mt-0.5">Create new bookings and manage active trips</p>
         </div>
         <button
-          onClick={() => { setShowWizard(true); setActiveTab("booking"); }}
-          className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-medium hover:bg-primary-600 hover:shadow-lg hover:shadow-primary/25 transition-all"
+          onClick={() => {
+            setShowWizard(true);
+            setActiveTab("booking");
+            setWizardStep(1);
+          }}
+          className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-medium hover:bg-primary-600 transition-all"
         >
           <Plus className="w-4 h-4" /> New Booking
         </button>
@@ -90,7 +105,13 @@ export default function BookingPage() {
         ].map((tab) => (
           <button
             key={tab.key}
-            onClick={() => { setActiveTab(tab.key as any); if (tab.key === "booking") setShowWizard(true); }}
+            onClick={() => {
+              setActiveTab(tab.key as any);
+              if (tab.key === "booking") {
+                setShowWizard(true);
+                setWizardStep(1);
+              }
+            }}
             className={cn(
               "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
               activeTab === tab.key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
@@ -101,7 +122,7 @@ export default function BookingPage() {
         ))}
       </div>
 
-      {/* Trip Management Table */}
+      {/* Trip Management */}
       {activeTab === "trips" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           {/* Filters */}
@@ -128,6 +149,7 @@ export default function BookingPage() {
             </select>
           </div>
 
+          {/* Table */}
           <div className="overflow-x-auto">
             <table className="data-table">
               <thead>
@@ -161,26 +183,15 @@ export default function BookingPage() {
                     <td className="font-mono text-sm">{trip.eta ? `${trip.eta} min` : "—"}</td>
                     <td>
                       <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => setShowDetailPanel(trip.id)}
-                          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-primary transition-colors"
-                          title="View Details"
-                        >
+                        <button onClick={() => setShowDetailPanel(trip.id)} className="p-1.5 rounded-lg hover:bg-gray-100">
                           <Eye className="w-4 h-4" />
                         </button>
                         {trip.status !== "Completed" && trip.status !== "Cancelled" && (
-                          <button
-                            onClick={() => setShowTrackModal(trip.id)}
-                            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-green-600 transition-colors"
-                            title="Track on Map"
-                          >
+                          <button onClick={() => setShowTrackModal(trip.id)} className="p-1.5 rounded-lg hover:bg-gray-100">
                             <Navigation className="w-4 h-4" />
                           </button>
                         )}
-                        <button
-                          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition-colors"
-                          title="Share via SMS"
-                        >
+                        <button className="p-1.5 rounded-lg hover:bg-gray-100">
                           <Send className="w-4 h-4" />
                         </button>
                       </div>
@@ -190,303 +201,209 @@ export default function BookingPage() {
               </tbody>
             </table>
           </div>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
-            <p className="text-xs text-gray-500">Showing {filteredTrips.length} trips</p>
-            <div className="flex items-center gap-1">
-              <button className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-50">Previous</button>
-              <button className="px-3 py-1.5 text-sm rounded-lg bg-primary text-white">1</button>
-              <button className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-50">Next</button>
-            </div>
-          </div>
         </div>
       )}
 
-      {/* Booking Wizard Modal */}
+      {/* ====================== WIZARD MODAL ====================== */}
       {showWizard && (
-        <div className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-hidden animate-fade-in">
-            {/* Wizard Header */}
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">New Ambulance Booking</h2>
-              <button onClick={() => setShowWizard(false)} className="p-1 rounded-lg hover:bg-gray-100">
-                <X className="w-5 h-5 text-gray-500" />
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-hidden flex flex-col">
+
+            {/* Header */}
+            <div className="px-6 py-4 border-b flex items-center justify-between bg-gray-50">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">New Ambulance Booking</h2>
+                <p className="text-sm text-gray-500">Step {wizardStep} of 5 • {stepLabels[wizardStep - 1]}</p>
+              </div>
+              <button onClick={() => setShowWizard(false)} className="p-2 hover:bg-gray-200 rounded-xl">
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Step Indicator */}
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
-              <div className="flex items-center justify-between">
+            {/* Step Progress */}
+            <div className="px-8 py-5 bg-white border-b">
+              <div className="flex justify-between relative">
                 {stepLabels.map((label, i) => (
-                  <React.Fragment key={i}>
-                    <div className="flex items-center gap-2">
-                      <div className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors",
-                        wizardStep > i + 1 ? "bg-green-500 text-white" :
-                        wizardStep === i + 1 ? "bg-primary text-white" : "bg-gray-200 text-gray-500"
-                      )}>
-                        {wizardStep > i + 1 ? <Check className="w-4 h-4" /> : i + 1}
-                      </div>
-                      <span className={cn("text-sm font-medium hidden sm:inline", wizardStep === i + 1 ? "text-gray-900" : "text-gray-400")}>{label}</span>
+                  <div key={i} className="flex flex-col items-center z-10">
+                    <div className={cn(
+                      "w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium border-4 border-white",
+                      wizardStep > i + 1 ? "bg-green-500 text-white" :
+                        wizardStep === i + 1 ? "bg-primary text-white" : "bg-gray-200 text-gray-400"
+                    )}>
+                      {wizardStep > i + 1 ? <Check className="w-5 h-5" /> : i + 1}
                     </div>
-                    {i < 4 && <div className={cn("flex-1 h-0.5 mx-2", wizardStep > i + 1 ? "bg-green-500" : "bg-gray-200")} />}
-                  </React.Fragment>
+                    <span className="text-xs mt-2 text-gray-500 hidden md:block">{label}</span>
+                  </div>
                 ))}
+                <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-200 -z-10" />
+                <div
+                  className="absolute top-4 left-0 h-0.5 bg-primary transition-all duration-300"
+                  style={{ width: `${((wizardStep - 1) / 4) * 100}%` }}
+                />
               </div>
             </div>
 
-            {/* Step Content */}
-            <div className="p-6 overflow-y-auto max-h-[50vh]">
-              {/* Step 1: Incident Details */}
+            {/* Content Area */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {/* Step 1: Incident */}
               {wizardStep === 1 && (
-                <div className="space-y-5 animate-fade-in">
+                <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Incident Type</label>
-                    <div className="flex gap-3">
+                    <label className="block text-sm font-medium mb-2">Incident Type</label>
+                    <div className="grid grid-cols-2 gap-3">
                       {["Emergency", "IFT"].map((type) => (
                         <button
                           key={type}
                           onClick={() => setForm({ ...form, incidentType: type as any })}
-                          className={cn(
-                            "flex-1 py-3 rounded-xl border-2 font-medium transition-all",
-                            form.incidentType === type ? "border-primary bg-primary-50 text-primary" : "border-gray-200 text-gray-600 hover:border-gray-300"
+                          className={cn("py-4 rounded-2xl border-2 font-medium",
+                            form.incidentType === type ? "border-primary bg-primary/5" : "border-gray-200"
                           )}
                         >
-                          {type === "IFT" ? "Inter-Facility Transfer" : type}
+                          {type === "IFT" ? "Inter-Facility Transfer" : "Emergency"}
                         </button>
                       ))}
                     </div>
                   </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Urgency Level</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {URGENCY_LEVELS.map((level) => (
+                    <label className="block text-sm font-medium mb-2">Urgency Level</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {URGENCY_LEVELS.map((level: any) => (
                         <button
-                          key={level.value}
-                          onClick={() => setForm({ ...form, urgency: level.value })}
-                          className={cn(
-                            "py-2.5 px-3 rounded-xl border-2 text-sm font-medium transition-all flex items-center gap-2",
-                            form.urgency === level.value ? "border-primary bg-primary-50" : "border-gray-200 hover:border-gray-300"
+                          key={level.value || level}
+                          onClick={() => setForm({ ...form, urgency: level.value || level })}
+                          className={cn("py-3 px-4 rounded-xl border-2 text-left",
+                            form.urgency === (level.value || level) ? "border-red-500 bg-red-50" : "border-gray-200"
                           )}
                         >
-                          <div className={cn("w-3 h-3 rounded-full", level.color)} />
-                          {level.label}
+                          <div className="flex items-center gap-2">
+                            <div className={cn("w-3 h-3 rounded-full", level.color || "bg-red-500")} />
+                            {level.label || level}
+                          </div>
                         </button>
                       ))}
                     </div>
                   </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Number of Patients</label>
-                    <div className="flex items-center gap-3">
-                      <button onClick={() => setForm({ ...form, numberOfPatients: Math.max(1, form.numberOfPatients - 1) })} className="w-10 h-10 rounded-xl border border-gray-300 flex items-center justify-center text-lg hover:bg-gray-50">−</button>
-                      <span className="text-xl font-bold w-8 text-center">{form.numberOfPatients}</span>
-                      <button onClick={() => setForm({ ...form, numberOfPatients: form.numberOfPatients + 1 })} className="w-10 h-10 rounded-xl border border-gray-300 flex items-center justify-center text-lg hover:bg-gray-50">+</button>
+                    <label className="block text-sm font-medium mb-2">Number of Patients</label>
+                    <div className="flex items-center gap-4">
+                      <button onClick={() => setForm({ ...form, numberOfPatients: Math.max(1, form.numberOfPatients - 1) })} className="w-12 h-12 rounded-2xl border text-2xl hover:bg-gray-50">-</button>
+                      <span className="text-3xl font-bold w-12 text-center">{form.numberOfPatients}</span>
+                      <button onClick={() => setForm({ ...form, numberOfPatients: form.numberOfPatients + 1 })} className="w-12 h-12 rounded-2xl border text-2xl hover:bg-gray-50">+</button>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Additional Notes</label>
-                    <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none resize-none" placeholder="Any additional information..." />
                   </div>
                 </div>
               )}
 
               {/* Step 2: Patient Details */}
               {wizardStep === 2 && (
-                <div className="space-y-4 animate-fade-in">
+                <div className="space-y-5">
+                  <input
+                    type="text"
+                    placeholder="Patient Full Name"
+                    value={form.patientName}
+                    onChange={(e) => setForm({ ...form, patientName: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-primary outline-none"
+                  />
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Patient Name</label>
-                      <input type="text" value={form.patientName} onChange={(e) => setForm({ ...form, patientName: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none" placeholder="Enter patient name" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">MRN Lookup</label>
-                      <div className="flex gap-2">
-                        <input type="text" value={form.mrn} onChange={(e) => setForm({ ...form, mrn: e.target.value })} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none" placeholder="MRN number" />
-                        <button className="px-3 py-2.5 bg-gray-100 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors"><Search className="w-4 h-4" /></button>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Age</label>
-                      <input type="number" value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none" placeholder="Age" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Gender</label>
-                      <select value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:border-primary outline-none">
-                        <option>Male</option><option>Female</option><option>Unknown</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Blood Group</label>
-                      <select value={form.bloodGroup} onChange={(e) => setForm({ ...form, bloodGroup: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:border-primary outline-none">
-                        {BLOOD_GROUPS.map((bg) => <option key={bg}>{bg}</option>)}
-                      </select>
-                    </div>
-                    <div className="col-span-2">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" checked={form.isMLC} onChange={(e) => setForm({ ...form, isMLC: e.target.checked })} className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary" />
-                        <span className="text-sm font-medium text-gray-700">Medico-Legal Case (MLC)</span>
-                      </label>
-                    </div>
-                    {form.isMLC && (
-                      <>
-                        <div><label className="block text-sm font-medium text-gray-700 mb-1.5">FIR Number</label><input type="text" value={form.firNumber} onChange={(e) => setForm({ ...form, firNumber: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:border-primary outline-none" /></div>
-                        <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Police Station</label><input type="text" value={form.policeStation} onChange={(e) => setForm({ ...form, policeStation: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:border-primary outline-none" /></div>
-                      </>
-                    )}
+                    <input type="text" placeholder="MRN (if known)" value={form.mrn} onChange={(e) => setForm({ ...form, mrn: e.target.value })} className="px-4 py-3 rounded-xl border border-gray-300 focus:border-primary outline-none" />
+                    <input type="number" placeholder="Age" value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} className="px-4 py-3 rounded-xl border border-gray-300 focus:border-primary outline-none" />
                   </div>
+                  {/* Add more patient fields as needed */}
                 </div>
               )}
 
-              {/* Step 3: Pickup Location */}
+              {/* Step 3: Pickup */}
               {wizardStep === 3 && (
-                <div className="space-y-4 animate-fade-in">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Pickup Address</label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                      <input type="text" value={form.pickupAddress} onChange={(e) => setForm({ ...form, pickupAddress: e.target.value })} className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none" />
-                    </div>
+                <div className="space-y-5">
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={form.pickupAddress}
+                      onChange={(e) => setForm({ ...form, pickupAddress: e.target.value })}
+                      className="w-full pl-12 py-3 rounded-xl border border-gray-300 focus:border-primary outline-none"
+                      placeholder="Pickup Address"
+                    />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Landmark (optional)</label>
-                    <input type="text" value={form.landmark} onChange={(e) => setForm({ ...form, landmark: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:border-primary outline-none" placeholder="Near landmark..." />
-                  </div>
-                  {/* Map Placeholder */}
-                  <div className="relative rounded-xl overflow-hidden border border-gray-200 h-52 bg-gradient-to-br from-green-50 to-blue-50">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center">
-                        <MapPin className="w-10 h-10 text-red-500 mx-auto mb-2 animate-bounce" />
-                        <p className="text-sm text-gray-600 font-medium">Koramangala, Bangalore</p>
-                        <p className="text-xs text-gray-400">12.9352°N, 77.6245°E</p>
-                      </div>
-                    </div>
-                    {/* Simulated map grid */}
-                    <svg className="absolute inset-0 w-full h-full opacity-10">
-                      {Array.from({ length: 20 }).map((_, i) => (
-                        <React.Fragment key={i}>
-                          <line x1={i * 40} y1={0} x2={i * 40} y2="100%" stroke="#0066CC" strokeWidth="0.5" />
-                          <line x1={0} y1={i * 20} x2="100%" y2={i * 20} stroke="#0066CC" strokeWidth="0.5" />
-                        </React.Fragment>
-                      ))}
-                    </svg>
-                  </div>
+                  <input type="text" placeholder="Landmark (optional)" value={form.landmark} onChange={(e) => setForm({ ...form, landmark: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-primary outline-none" />
                 </div>
               )}
 
-              {/* Step 4: Vehicle Assignment */}
+              {/* Step 4: Vehicle */}
               {wizardStep === 4 && (
-                <div className="space-y-4 animate-fade-in">
-                  {/* Auto-dispatch suggestion */}
-                  <div className="p-4 rounded-xl border-2 border-green-200 bg-green-50">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Ambulance className="w-5 h-5 text-green-600" />
-                      <h3 className="font-semibold text-green-800">Recommended — Auto Dispatch</h3>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-green-700"><strong>KA03GH3456</strong> — BLS — ETA 5 min</p>
-                        <p className="text-xs text-green-600">Crew: Driver Pratap Singh + EMT Santosh M</p>
-                      </div>
-                      <button
-                        onClick={() => setForm({ ...form, selectedVehicle: "VEH004", autoDispatch: true })}
-                        className={cn("px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                          form.autoDispatch && form.selectedVehicle === "VEH004" ? "bg-green-600 text-white" : "bg-white text-green-700 border border-green-300 hover:bg-green-100")}
-                      >
-                        {form.autoDispatch && form.selectedVehicle === "VEH004" ? <><Check className="w-4 h-4 inline mr-1" />Selected</> : "Confirm Auto-Dispatch"}
-                      </button>
-                    </div>
+                <div className="space-y-6">
+                  <div className="p-5 bg-green-50 border border-green-200 rounded-2xl">
+                    <p className="font-medium text-green-800">Auto Dispatch Recommended</p>
+                    <p className="text-sm text-green-600 mt-1">Nearest ambulance will be assigned automatically</p>
                   </div>
 
-                  <div className="text-center text-sm text-gray-400 my-2">— OR assign manually —</div>
-
-                  {/* Available vehicles table */}
-                  <div className="overflow-x-auto rounded-xl border border-gray-200">
-                    <table className="data-table">
-                      <thead><tr><th>Vehicle</th><th>Type</th><th>Status</th><th>Crew</th><th>Action</th></tr></thead>
-                      <tbody>
-                        {availableVehicles.map((v) => (
-                          <tr key={v.id} className={cn(form.selectedVehicle === v.id ? "bg-primary-50" : "")}>
-                            <td className="font-mono text-sm font-medium">{v.registrationNumber}</td>
-                            <td><span className="badge bg-gray-100 text-gray-700">{v.type}</span></td>
-                            <td><span className="badge bg-green-100 text-green-700">{v.status}</span></td>
-                            <td className="text-xs">{v.driver.name} + {v.emt.name}</td>
-                            <td>
-                              <button
-                                onClick={() => setForm({ ...form, selectedVehicle: v.id, autoDispatch: false })}
-                                className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                                  form.selectedVehicle === v.id ? "bg-primary text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200")}
-                              >
-                                {form.selectedVehicle === v.id ? "Selected" : "Assign"}
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div>
+                    <p className="text-sm font-medium mb-3">Or choose manually:</p>
+                    <div className="space-y-2 max-h-80 overflow-y-auto">
+                      {availableVehicles.map((vehicle) => (
+                        <div
+                          key={vehicle.id}
+                          onClick={() => setForm({ ...form, selectedVehicle: vehicle.id, autoDispatch: false })}
+                          className={cn(
+                            "p-4 rounded-2xl border cursor-pointer transition-all",
+                            form.selectedVehicle === vehicle.id ? "border-primary bg-primary/5" : "border-gray-200 hover:border-gray-300"
+                          )}
+                        >
+                          <p className="font-mono font-medium">{vehicle.registrationNumber}</p>
+                          <p className="text-sm text-gray-600">{vehicle.type} • {vehicle.driver.name}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Step 5: Confirm & Submit */}
+              {/* Step 5: Confirm */}
               {wizardStep === 5 && (
-                <div className="space-y-4 animate-fade-in">
-                  <h3 className="font-semibold text-gray-900 mb-3">Booking Summary</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    {[
-                      { label: "Incident Type", value: form.incidentType },
-                      { label: "Urgency", value: form.urgency },
-                      { label: "Patient", value: form.patientName || "Unknown" },
-                      { label: "Age / Gender", value: `${form.age || "—"} / ${form.gender}` },
-                      { label: "Pickup", value: form.pickupAddress },
-                      { label: "Vehicle", value: form.selectedVehicle ? availableVehicles.find(v => v.id === form.selectedVehicle)?.registrationNumber || "Auto-Dispatch" : "Auto-Dispatch" },
-                      { label: "MLC", value: form.isMLC ? "Yes" : "No" },
-                      { label: "Patients", value: String(form.numberOfPatients) },
-                    ].map((item) => (
-                      <div key={item.label} className="bg-gray-50 rounded-lg p-3">
-                        <p className="text-xs text-gray-500 mb-0.5">{item.label}</p>
-                        <p className="text-sm font-medium text-gray-900">{item.value}</p>
-                      </div>
-                    ))}
+                <div className="space-y-6">
+                  <h3 className="font-semibold text-lg">Booking Summary</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><span className="text-gray-500">Incident:</span> {form.incidentType}</div>
+                    <div><span className="text-gray-500">Urgency:</span> {form.urgency}</div>
+                    <div><span className="text-gray-500">Patient:</span> {form.patientName || "Not specified"}</div>
+                    <div><span className="text-gray-500">Pickup:</span> {form.pickupAddress}</div>
+                    <div><span className="text-gray-500">Vehicle:</span> {form.selectedVehicle ? "Manual" : "Auto Dispatch"}</div>
                   </div>
-                  {form.notes && (
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <p className="text-xs text-gray-500 mb-0.5">Notes</p>
-                      <p className="text-sm text-gray-700">{form.notes}</p>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
 
-            {/* Wizard Footer */}
-            <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+            {/* Footer Navigation */}
+            <div className="p-6 border-t flex justify-between bg-white">
               <button
-                onClick={() => wizardStep > 1 ? setWizardStep((wizardStep - 1) as WizardStep) : setShowWizard(false)}
-                className="flex items-center gap-1 px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                onClick={() => {
+                  if (wizardStep === 1) setShowWizard(false);
+                  else setWizardStep((wizardStep - 1) as WizardStep);
+                }}
+                className="px-6 py-3 text-gray-600 hover:text-gray-900 font-medium"
               >
-                <ChevronLeft className="w-4 h-4" /> {wizardStep === 1 ? "Cancel" : "Back"}
+                {wizardStep === 1 ? "Cancel" : "Back"}
               </button>
-              {wizardStep < 5 ? (
-                <button
-                  onClick={() => setWizardStep((wizardStep + 1) as WizardStep)}
-                  className="flex items-center gap-1 bg-primary text-white px-5 py-2.5 rounded-xl font-medium hover:bg-primary-600 transition-colors"
-                >
-                  Next <ChevronRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <button
-                  onClick={handleSubmit}
-                  className="flex items-center gap-2 bg-green-600 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-green-700 transition-colors"
-                >
-                  <Check className="w-4 h-4" /> Confirm Booking
-                </button>
-              )}
+
+              <button
+                onClick={() => {
+                  if (wizardStep < 5) {
+                    setWizardStep((wizardStep + 1) as WizardStep);
+                  } else {
+                    handleSubmit();
+                  }
+                }}
+                className="px-8 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary-600 flex items-center gap-2"
+              >
+                {wizardStep === 5 ? "Confirm Booking" : "Next"}
+                {wizardStep < 5 && <ChevronRight className="w-4 h-4" />}
+              </button>
             </div>
           </div>
         </div>
       )}
-
       {/* Track on Map Modal */}
       {showTrackModal && (
         <div className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center backdrop-blur-sm">
@@ -551,8 +468,9 @@ export default function BookingPage() {
                           <div className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
                           <div className="flex-1">
                             <p className="text-sm font-medium text-gray-900">{event.label}</p>
-                            <p className="text-xs text-gray-500">{event.time ? formatDateTime(event.time) : ""}</p>
-                          </div>
+                            <p className="text-xs text-gray-500">
+                              {event.time ? new Date(event.time).toLocaleString() : ""}
+                            </p>                          </div>
                         </div>
                       ))}
                     </div>

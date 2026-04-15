@@ -221,50 +221,196 @@ export const mockKPIData: KPIData[] = [
 // ===== MOCK TRIPS =====
 export const mockTrips: Trip[] = [
   {
-    id: "TRP-20260415-001", incidentType: "Emergency", urgency: "RED",
-    patient: { id: "P001", name: "Mohan Das", mrn: "CGH2024-1901", age: 45, gender: "Male", bloodGroup: "O+", medicalHistory: { conditions: ["Diabetes", "Hypertension"], medications: ["Metformin", "Amlodipine"], allergies: ["Penicillin"] } },
+    id: "TRP-20260415-001",
+    incidentType: "Emergency",
+    urgency: "RED",
+    patient: {
+      id: "P001",
+      name: "Mohan Das",
+      mrn: "CGH2024-1901",
+      age: 45,
+      gender: "Male",
+      bloodGroup: "O+",
+      medicalHistory: { conditions: ["Diabetes", "Hypertension"], medications: ["Metformin", "Amlodipine"], allergies: ["Penicillin"] }
+    },
     pickupLocation: { address: "42, 3rd Cross, JP Nagar, Bangalore", lat: 12.9100, lng: 77.5900 },
     destination: { address: "City General Hospital, Koramangala", lat: 12.9352, lng: 77.6245 },
-    vehicle: mockVehicles[0], status: "Transporting", dispatchedAt: new Date(Date.now() - 1200000),
-    atSceneAt: new Date(Date.now() - 600000), departedSceneAt: new Date(Date.now() - 300000),
-    eta: 8, numberOfPatients: 1, isMLC: false,
+    vehicle: mockVehicles[0],
+    status: "Transporting",
+    dispatchedAt: new Date(Date.now() - 1200000),
+    atSceneAt: new Date(Date.now() - 600000),
+    departedSceneAt: new Date(Date.now() - 300000),
+    eta: 8,
+    numberOfPatients: 1,
+    isMLC: false,
   },
   {
-    id: "TRP-20260415-002", incidentType: "Emergency", urgency: "RED",
-    patient: { id: "P002", name: "Unknown Male", age: 30, gender: "Male", medicalHistory: { conditions: [], medications: [], allergies: [] } },
+    id: "TRP-20260415-002",
+    incidentType: "Emergency",
+    urgency: "RED",
+    patient: {
+      id: "P002",
+      name: "Unknown Male",
+      age: 30,
+      gender: "Male",
+      medicalHistory: { conditions: [], medications: [], allergies: [] }
+    },
     pickupLocation: { address: "Outer Ring Road, near Marathahalli Bridge", lat: 12.9550, lng: 77.7000 },
     destination: { address: "City General Hospital, Koramangala", lat: 12.9352, lng: 77.6245 },
-    vehicle: mockVehicles[2], status: "At Scene", dispatchedAt: new Date(Date.now() - 1800000),
-    atSceneAt: new Date(Date.now() - 900000), eta: 22, numberOfPatients: 1, isMLC: true,
+    vehicle: mockVehicles[2],
+    status: "At Scene",
+    dispatchedAt: new Date(Date.now() - 1800000),
+    atSceneAt: new Date(Date.now() - 900000),
+    eta: 22,
+    numberOfPatients: 1,
+    isMLC: true,
     mlcDetails: { firNumber: "FIR-2026-04877", policeStation: "Marathahalli PS", officerName: "SI Raju" },
   },
   {
-    id: "TRP-20260415-003", incidentType: "Emergency", urgency: "ORANGE",
-    patient: { id: "P003", name: "Lakshmi Devi", mrn: "CGH2024-1899", age: 62, gender: "Female", bloodGroup: "B+", medicalHistory: { conditions: ["Osteoporosis", "Hypothyroidism"], medications: ["Calcium", "Levothyroxine"], allergies: [] } },
+    id: "TRP-20260415-003",
+    incidentType: "Emergency",
+    urgency: "ORANGE",
+    patient: {
+      id: "P003",
+      name: "Lakshmi Devi",
+      mrn: "CGH2024-1899",
+      age: 62,
+      gender: "Female",
+      bloodGroup: "B+",
+      medicalHistory: { conditions: ["Osteoporosis", "Hypothyroidism"], medications: ["Calcium", "Levothyroxine"], allergies: [] }
+    },
     pickupLocation: { address: "78, 2nd Main, Jayanagar 4th Block", lat: 12.9250, lng: 77.5800 },
     destination: { address: "City General Hospital, Koramangala", lat: 12.9352, lng: 77.6245 },
-    vehicle: mockVehicles[6], status: "Transporting", dispatchedAt: new Date(Date.now() - 2400000),
-    atSceneAt: new Date(Date.now() - 1500000), departedSceneAt: new Date(Date.now() - 600000),
-    eta: 15, numberOfPatients: 1, isMLC: false,
+    vehicle: mockVehicles[6],
+    status: "Transporting",
+    dispatchedAt: new Date(Date.now() - 2400000),
+    atSceneAt: new Date(Date.now() - 1500000),
+    departedSceneAt: new Date(Date.now() - 600000),
+    eta: 15,
+    numberOfPatients: 1,
+    isMLC: false,
   },
   {
-    id: "TRP-20260415-004", incidentType: "IFT", urgency: "GREEN",
-    patient: { id: "P004", name: "Subramaniam V", mrn: "CGH2024-1845", age: 58, gender: "Male", bloodGroup: "A+", medicalHistory: { conditions: ["COPD"], medications: ["Salbutamol inhaler"], allergies: ["Aspirin"] } },
+    id: "TRP-20260415-004",
+    incidentType: "IFT",
+    urgency: "GREEN",
+    patient: {
+      id: "P004",
+      name: "Subramaniam V",
+      mrn: "CGH2024-1845",
+      age: 58,
+      gender: "Male",
+      bloodGroup: "A+",
+      medicalHistory: { conditions: ["COPD"], medications: ["Salbutamol inhaler"], allergies: ["Aspirin"] }
+    },
     pickupLocation: { address: "City General Hospital, Koramangala", lat: 12.9352, lng: 77.6245 },
     destination: { address: "NIMHANS, Hosur Road, Bangalore", lat: 12.9416, lng: 77.5967 },
-    status: "Completed", dispatchedAt: new Date(Date.now() - 14400000),
-    atSceneAt: new Date(Date.now() - 13800000), departedSceneAt: new Date(Date.now() - 13200000),
-    arrivedHospitalAt: new Date(Date.now() - 10800000), completedAt: new Date(Date.now() - 10800000),
-    numberOfPatients: 1, isMLC: false,
-    iftDetails: { originHospital: "City General Hospital", destinationHospital: "NIMHANS", transferReason: "Neurosurgery consult", patientSummary: "58M with acute subdural hematoma, GCS 13, stable vitals" },
+    status: "Completed",
+    dispatchedAt: new Date(Date.now() - 14400000),
+    atSceneAt: new Date(Date.now() - 13800000),
+    departedSceneAt: new Date(Date.now() - 13200000),
+    arrivedHospitalAt: new Date(Date.now() - 10800000),
+    completedAt: new Date(Date.now() - 10800000),
+    numberOfPatients: 1,
+    isMLC: false,
+    iftDetails: {
+      originHospital: "City General Hospital",
+      destinationHospital: "NIMHANS",
+      transferReason: "Neurosurgery consult",
+      patientSummary: "58M with acute subdural hematoma, GCS 13, stable vitals"
+    },
   },
   {
-    id: "TRP-20260414-005", incidentType: "Emergency", urgency: "RED",
-    patient: { id: "P005", name: "Fatima Begum", age: 35, gender: "Female", bloodGroup: "O-", medicalHistory: { conditions: ["Asthma"], medications: ["Budesonide inhaler"], allergies: ["Sulfa drugs"] } },
+    id: "TRP-20260414-005",
+    incidentType: "Emergency",
+    urgency: "RED",
+    patient: {
+      id: "P005",
+      name: "Fatima Begum",
+      age: 35,
+      gender: "Female",
+      bloodGroup: "O-",
+      medicalHistory: { conditions: ["Asthma"], medications: ["Budesonide inhaler"], allergies: ["Sulfa drugs"] }
+    },
     pickupLocation: { address: "15, 1st Cross, Shivaji Nagar", lat: 12.9850, lng: 77.6050 },
     destination: { address: "City General Hospital, Koramangala", lat: 12.9352, lng: 77.6245 },
-    status: "Completed", dispatchedAt: new Date(Date.now() - 86400000),
-    completedAt: new Date(Date.now() - 82800000), numberOfPatients: 1, isMLC: false,
+    status: "Completed",
+    dispatchedAt: new Date(Date.now() - 86400000),
+    completedAt: new Date(Date.now() - 82800000),
+    numberOfPatients: 1,
+    isMLC: false,
+  },
+
+  // ==================== TEST DATA FOR CANCEL / MODIFY UI ====================
+
+  // 1. Pure Pending Trip (No vehicle assigned) → Best for testing Cancel UI
+  {
+    id: "TRP-20260415-006",
+    incidentType: "Emergency",
+    urgency: "RED",
+    patient: {
+      id: "P006",
+      name: "Ramesh Kumar",
+      mrn: "CGH2024-1923",
+      age: 52,
+      gender: "Male",
+      bloodGroup: "AB+",
+      medicalHistory: {
+        conditions: ["Heart Disease"],
+        medications: ["Aspirin", "Atorvastatin"],
+        allergies: ["Morphine"]
+      }
+    },
+    pickupLocation: {
+      address: "No. 27, 5th Main, Malleshwaram, Bangalore",
+      lat: 13.0050,
+      lng: 77.5650
+    },
+    destination: {
+      address: "City General Hospital, Koramangala",
+      lat: 12.9352,
+      lng: 77.6245
+    },
+    // vehicle is omitted → becomes undefined (correct)
+    status: "Pending",
+    // dispatchedAt omitted → undefined
+    // eta omitted → undefined
+    numberOfPatients: 1,
+    isMLC: false,
+    notes: "Severe chest pain, waiting for ambulance assignment",
+  },
+
+  // 2. Vehicle Assigned but NOT yet Dispatched → Tests your requirement
+  {
+    id: "TRP-20260415-007",
+    incidentType: "Emergency",
+    urgency: "ORANGE",
+    patient: {
+      id: "P007",
+      name: "Priya Sharma",
+      mrn: "CGH2024-1931",
+      age: 41,
+      gender: "Female",
+      bloodGroup: "O+",
+      medicalHistory: { conditions: ["Migraine", "Anemia"], medications: ["Sumatriptan"], allergies: [] }
+    },
+    pickupLocation: {
+      address: "BTM 2nd Stage, Near Silk Board, Bangalore",
+      lat: 12.9166,
+      lng: 77.6101
+    },
+    destination: {
+      address: "City General Hospital, Koramangala",
+      lat: 12.9352,
+      lng: 77.6245
+    },
+    vehicle: mockVehicles[1],           // Vehicle is assigned
+    status: "Pending",
+    dispatchedAt: undefined,            // Explicitly undefined (safe)
+    eta: undefined,
+    numberOfPatients: 1,
+    isMLC: false,
+    notes: "Vehicle KA04AB7788 assigned, waiting for crew confirmation",
   },
 ];
 

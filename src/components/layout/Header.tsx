@@ -10,8 +10,10 @@ import {
   CheckCheck, ExternalLink, Sun, Moon,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
+  const router = useRouter();
   const { user, notifications, unreadCount, markNotificationRead, markAllRead, logout } = useAuthStore();
   const { isDark, toggle: toggleTheme } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -169,10 +171,24 @@ export default function Header() {
                 <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{user.email}</p>
               </div>
               <div className="py-1">
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--text-secondary)' }}>
+                <button 
+                  onClick={() => {
+                    setShowProfile(false);
+                    router.push("/settings?tab=profile");
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800" 
+                  style={{ color: 'var(--text-secondary)' }}
+                >
                   <User className="w-4 h-4" /> Profile
                 </button>
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--text-secondary)' }}>
+                <button 
+                  onClick={() => {
+                    setShowProfile(false);
+                    router.push("/settings?tab=password");
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800" 
+                  style={{ color: 'var(--text-secondary)' }}
+                >
                   <Lock className="w-4 h-4" /> Change Password
                 </button>
                 <div className="border-t my-1" style={{ borderColor: 'var(--border-primary)' }} />

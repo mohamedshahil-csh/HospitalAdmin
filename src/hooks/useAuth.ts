@@ -19,6 +19,7 @@ interface AuthStore extends AuthState {
   sidebarCollapsed: boolean;
   toggleSidebar: () => void;
   mfaSessionToken: string | null;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; message?: string }>;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -233,6 +234,29 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   toggleSidebar: () => {
     set({ sidebarCollapsed: !get().sidebarCollapsed });
+  },
+  
+  changePassword: async (oldPassword: string, newPassword: string) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://teleems-api-gateway.onrender.com";
+      const response = await fetch(`${baseUrl}/v1/auth/change-password`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
+      });
+      const result = await response.json();
+      return { 
+        success: result.status === 201 || result.status === 200,
+        message: result.message
+      };
+    } catch (error) {
+      console.error("Change password error:", error);
+      return { success: false, message: "Server error occurred" };
+    }
   },
 }));
 

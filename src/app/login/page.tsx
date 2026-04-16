@@ -21,22 +21,33 @@ export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState<UserRole>("hospital_admin");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [forgotEmail, setForgotEmail] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!username || !password) {
       toast.error("Please enter username and password");
       return;
     }
-    const success = await login(username, password, role);
-    if (success) {
-      setStep("otp");
-      toast.success("OTP sent to registered mobile");
-    } else {
-      toast.error("Invalid credentials");
+    
+    try {
+      const { success, mfaRequired } = await login(username, password);
+      
+      if (success) {
+        if (mfaRequired) {
+          setStep("otp");
+          toast.success("MFA Required. Please enter the code from your authenticator app.");
+        } else {
+          toast.success("Login successful!");
+          router.push("/dashboard");
+        }
+      } else {
+        toast.error("Invalid credentials or login failed");
+      }
+    } catch (error) {
+      toast.error("An error occurred during login");
     }
   };
 
@@ -137,32 +148,6 @@ export default function LoginPage() {
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome back</h2>
                 <p className="text-gray-500 text-sm">Sign in to your Hospital Admin account</p>
-              </div>
-
-              {/* Role Selector */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sign in as</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(["hospital_admin", "hospital_coordinator", "ed_doctor"] as UserRole[]).map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => setRole(r)}
-                      className={`p-3 rounded-xl border-2 text-center transition-all duration-200 ${
-                        role === r
-                          ? "border-primary bg-primary-50 text-primary shadow-sm"
-                          : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
-                      }`}
-                    >
-                      <div className="flex justify-center mb-1.5">
-                        {r === "hospital_admin" ? <Building2 className="w-5 h-5" /> :
-                         r === "hospital_coordinator" ? <Shield className="w-5 h-5" /> :
-                         <User className="w-5 h-5" />}
-                      </div>
-                      <span className="text-[11px] font-medium leading-tight block">{ROLE_LABELS[r]}</span>
-                    </button>
-                  ))}
-                </div>
               </div>
 
               <form onSubmit={handleLogin} className="space-y-4">

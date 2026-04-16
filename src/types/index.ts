@@ -21,7 +21,7 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   sessionExpiresAt: Date | null;
-  login: (username: string, password: string, role: UserRole) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<{ success: boolean; mfaRequired: boolean }>;
   verifyOtp: (otp: string) => Promise<boolean>;
   logout: () => void;
   resetSessionTimer: () => void;

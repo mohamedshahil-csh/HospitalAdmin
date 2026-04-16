@@ -21,6 +21,7 @@ export default function SettingsPage() {
     { key: "fleet", label: "Fleet Network" },
     { key: "notifications", label: "Notifications" },
     { key: "teleconsult", label: "Teleconsult Routing" },
+    { key: "security", label: "Security & MFA" },
   ];
 
   const handleSave = () => {
@@ -181,6 +182,181 @@ export default function SettingsPage() {
             </select>
           </div>
           <p className="text-sm text-gray-500">ERCP doctors will receive TeleLink requests based on the selected routing mode and their availability schedule (configured in Staff & Accounts).</p>
+        </div>
+      )}
+
+      {activeTab === "security" && <SecuritySettings />}
+    </div>
+  );
+}
+
+function SecuritySettings() {
+  const { setupMfa, verifyMfaSetup, disableMfa } = require("@/hooks/useAuth").useAuthStore();
+  const [mfaData, setMfaData] = useState<{ qr_code_base64: string; secret: string; totp_uri: string } | null>(null);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [disablePassword, setDisablePassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSetupComplete, setIsSetupComplete] = useState(false);
+  const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+
+  const handleInitiateSetup = async () => {
+    setIsLoading(true);
+    const { success, data } = await setupMfa();
+    if (success && data) {
+      setMfaData(data);
+    } else {
+      toast.error("Failed to initiate MFA setup");
+    }
+    setIsLoading(false);
+  };
+
+  const handleVerifySetup = async () => {
+    if (verificationCode.length !== 6) {
+      toast.error("Please enter a 6-digit code");
+      return;
+    }
+    setIsLoading(true);
+    const success = await verifyMfaSetup(verificationCode);
+    if (success) {
+      toast.success("MFA Setup Successful!");
+      setIsSetupComplete(true);
+    } else {
+      toast.error("Invalid verification code");
+    }
+    setIsLoading(false);
+  };
+
+  const handleDisableMfa = async () => {
+    if (!disablePassword) {
+      toast.error("Please enter your password to disable MFA");
+      return;
+    }
+    setIsLoading(true);
+    const success = await disableMfa(disablePassword);
+    if (success) {
+      toast.success("MFA Disabled Successfully");
+      setIsSetupComplete(false);
+      setMfaData(null);
+      setShowDisableConfirm(false);
+      setDisablePassword("");
+    } else {
+      toast.error("Failed to disable MFA. Please check your password.");
+    }
+    setIsLoading(false);
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="p-2 bg-primary-50 rounded-lg">
+          <Shield className="w-5 h-5 text-primary" />
+        </div>
+        <div>
+          <h3 className="font-semibold text-gray-900">Multi-Factor Authentication (MFA)</h3>
+          <p className="text-sm text-gray-500">Enhance your account security with TOTP authentication</p>
+        </div>
+      </div>
+
+      {!mfaData && !isSetupComplete && (
+        <div className="bg-gray-50 rounded-xl p-6 text-center border-2 border-dashed border-gray-200">
+          <p className="text-sm text-gray-600 mb-4">MFA is currently disabled for your account. We highly recommend enabling it to protect your hospital data.</p>
+          <button
+            onClick={handleInitiateSetup}
+            disabled={isLoading}
+            className="bg-primary text-white px-6 py-2.5 rounded-xl font-medium hover:bg-primary-600 transition-colors disabled:opacity-50"
+          >
+            {isLoading ? "Initiating..." : "Enable MFA Setup"}
+          </button>
+        </div>
+      )}
+
+      {mfaData && !isSetupComplete && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="grid md:grid-cols-2 gap-8 items-center bg-gray-50 p-6 rounded-2xl border border-gray-100">
+            <div className="flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-sm border border-gray-200">
+              <img src={mfaData.qr_code_base64} alt="MFA QR Code" className="w-48 h-48" />
+              <p className="mt-4 text-xs font-mono text-gray-400 select-all">{mfaData.secret}</p>
+            </div>
+            <div className="space-y-4">
+              <h4 className="font-medium text-gray-900">Scan QR Code</h4>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                1. Open your authenticator app (e.g., Google Authenticator, Authy).<br/>
+                2. Scan the QR code shown here.<br/>
+                3. Enter the 6-digit code from the app below to verify.
+              </p>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider">Verification Code</label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ""))}
+                  placeholder="000000"
+                  className="w-full px-4 py-3 text-center text-2xl font-bold tracking-[0.5em] rounded-xl border border-gray-300 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+                />
+              </div>
+              <button
+                onClick={handleVerifySetup}
+                disabled={isLoading}
+                className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-600 transition-colors disabled:opacity-50"
+              >
+                {isLoading ? "Verifying..." : "Confirm & Enable"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isSetupComplete && (
+        <div className="bg-green-50 rounded-xl p-6 text-center border border-green-100">
+          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <CheckCircle className="w-6 h-6 text-green-600" />
+          </div>
+          <h4 className="font-bold text-green-900 mb-1">MFA is Active</h4>
+          <p className="text-sm text-green-700">Your account is now protected with multi-factor authentication.</p>
+          <button
+            onClick={() => { setMfaData(null); setIsSetupComplete(false); }}
+            className="mt-4 text-sm text-gray-500 hover:text-gray-700 underline"
+          >
+            Reset UI (For Demo)
+          </button>
+          
+          <div className="mt-8 pt-8 border-t border-gray-100">
+            {!showDisableConfirm ? (
+              <button
+                onClick={() => setShowDisableConfirm(true)}
+                className="text-red-500 text-sm font-medium hover:text-red-600 transition-colors"
+              >
+                Disable Multi-Factor Authentication
+              </button>
+            ) : (
+              <div className="space-y-4 max-w-sm mx-auto">
+                <p className="text-sm text-gray-600 font-medium">Enter password to disable MFA</p>
+                <input
+                  type="password"
+                  value={disablePassword}
+                  onChange={(e) => setDisablePassword(e.target.value)}
+                  placeholder="Your password"
+                  className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10 outline-none text-sm"
+                />
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDisableConfirm(false)}
+                    className="flex-1 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDisableMfa}
+                    disabled={isLoading}
+                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 disabled:opacity-50"
+                  >
+                    {isLoading ? "Disabling..." : "Confirm Disable"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

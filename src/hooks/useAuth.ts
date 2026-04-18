@@ -21,8 +21,8 @@ interface AuthStore extends AuthState {
   mfaSessionToken: string | null;
   changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; message?: string }>;
   createStaff: (staffData: any) => Promise<{ success: boolean; message?: string }>;
-  fetchStaff: (role?: string) => Promise<{ success: boolean; data?: any[] }>;
-  fetchProfile: () => Promise<{ success: boolean; data?: any }>;
+  fetchStaff: (role?: string) => Promise<{ success: boolean; data?: any[]; message?: string }>;
+  fetchProfile: () => Promise<{ success: boolean; data?: any; message?: string }>;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -366,10 +366,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         });
         return { success: true, data: result.data };
       }
-      return { success: false };
+      return { success: false, message: result.message || result.error?.message || "Failed to fetch profile" };
     } catch (error) {
       console.error("Fetch profile error:", error);
-      return { success: false };
+      return { success: false, message: "Network error occurred while fetching profile" };
     }
   },
 }));

@@ -9,7 +9,9 @@ import {
 import { cn } from "@/lib/utils";
 import { URGENCY_LEVELS, BLOOD_GROUPS, TRIP_STATUS_COLORS } from "@/lib/constants";
 import { mockTrips, mockVehicles } from "@/lib/mock-data";
+import { useAuth } from "@/hooks/useAuth";
 import toast from "react-hot-toast";
+
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 

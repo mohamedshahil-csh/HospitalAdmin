@@ -20,6 +20,9 @@ interface AuthStore extends AuthState {
   toggleSidebar: () => void;
   mfaSessionToken: string | null;
   changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; message?: string }>;
+  createStaff: (staffData: any) => Promise<{ success: boolean; message?: string }>;
+  fetchStaff: (role?: string) => Promise<{ success: boolean; data?: any[] }>;
+  fetchProfile: () => Promise<{ success: boolean; data?: any }>;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -56,10 +59,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           "Hospital Admin": "hospital_admin",
           "Hospital Coordinator": "hospital_coordinator",
           "ED Doctor": "ed_doctor",
+          "Hospital ED Doctor (ERCP)": "ed_doctor",
         };
 
         const apiRole = data.user.roles[0];
-        const localRole = roleMapping[apiRole] || "hospital_admin";
+        const localRole = roleMapping[apiRole] || "hospital_coordinator"; // safer default than admin
 
         set({
           user: {
@@ -185,6 +189,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         }
         
         set({ isAuthenticated: true, isLoading: false, otpPending: false, mfaSessionToken: null });
+        
+        // Fetch full profile after successful OTP
+        await get().fetchProfile();
+        
         return true;
       }
       
@@ -236,26 +244,132 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ sidebarCollapsed: !get().sidebarCollapsed });
   },
   
-  changePassword: async (oldPassword: string, newPassword: string) => {
+  changePassword: async (currentPassword: string, newPassword: string) => {
     try {
       const token = localStorage.getItem("access_token");
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://teleems-api-gateway.onrender.com";
-      const response = await fetch(`${baseUrl}/v1/auth/change-password`, {
+      const response = await fetch(`${baseUrl}/v1/auth/password/change`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
+        body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
       });
       const result = await response.json();
-      return { 
-        success: result.status === 201 || result.status === 200,
-        message: result.message
-      };
+      
+      if (response.ok || result.status === 201 || result.status === 200) {
+        return { success: true, message: result.message || "Password updated successfully" };
+      }
+      
+      // Handle structured validation errors
+      const errorMessage = result.error?.details?.[0] || result.error?.message || result.message || "Failed to update password";
+      return { success: false, message: errorMessage };
     } catch (error) {
       console.error("Change password error:", error);
-      return { success: false, message: "Server error occurred" };
+      return { success: false, message: "A server error occurred. Please try again later." };
+    }
+  },
+
+  createStaff: async (staffData: any) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://teleems-api-gateway.onrender.com";
+      const response = await fetch(`${baseUrl}/v1/auth/users`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(staffData),
+      });
+      const result = await response.json();
+      
+      if (response.ok || result.status === 201 || result.status === 200) {
+        return { success: true, message: result.message || "Staff member created successfully" };
+      }
+      
+      const errorMessage = result.error?.details?.[0] || result.error?.message || result.message || "Failed to create staff member";
+      return { success: false, message: errorMessage };
+    } catch (error) {
+      console.error("Create staff error:", error);
+      return { success: false, message: "A server error occurred while creating staff." };
+    }
+  },
+
+  fetchStaff: async (role?: string) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://teleems-api-gateway.onrender.com";
+      let url = `${baseUrl}/v1/auth/users`;
+      if (role) {
+        url += `?role=${encodeURIComponent(role)}`;
+      }
+      
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { 
+          "Authorization": `Bearer ${token}`
+        },
+      });
+      const result = await response.json();
+      
+      if (response.ok || result.status === 200 || result.status === 201) {
+        return { success: true, data: result.data };
+      }
+      
+      console.error("Fetch staff failed:", result);
+      return { success: false, message: result.message || result.error?.message || "Failed to fetch staff" };
+    } catch (error) {
+      console.error("Fetch staff network error:", error);
+      return { success: false, message: "Network error occurred while fetching staff" };
+    }
+  },
+  fetchProfile: async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://teleems-api-gateway.onrender.com";
+      const response = await fetch(`${baseUrl}/v1/auth/me`, {
+        method: "GET",
+        headers: { 
+          "Authorization": `Bearer ${token}`
+        },
+      });
+      const result = await response.json();
+      
+      if (response.ok || result.status === 200) {
+        const { data } = result;
+        
+        const roleMapping: Record<string, UserRole> = {
+          "Hospital Admin": "hospital_admin",
+          "Hospital Coordinator": "hospital_coordinator",
+          "ED Doctor": "ed_doctor",
+          "Hospital ED Doctor (ERCP)": "ed_doctor",
+        };
+
+        const apiRole = data.roles[0];
+        const localRole = roleMapping[apiRole] || "hospital_coordinator";
+
+        set({
+          user: {
+            id: data.id,
+            username: data.username,
+            fullName: data.name || data.username,
+            phone: data.phone,
+            role: localRole,
+            hospitalId: data.hospitalId || "default",
+            hospitalName: data.name || "TeleEMS Hospital",
+            email: data.email,
+            lastLogin: data.lastActiveAt ? new Date(data.lastActiveAt) : new Date(),
+            isActive: data.status === "ACTIVE"
+          }
+        });
+        return { success: true, data: result.data };
+      }
+      return { success: false };
+    } catch (error) {
+      console.error("Fetch profile error:", error);
+      return { success: false };
     }
   },
 }));

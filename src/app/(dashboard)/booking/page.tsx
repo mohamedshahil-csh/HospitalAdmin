@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 
 export default function BookingPage() {
+  const { user } = useAuth();
   const [showWizard, setShowWizard] = useState(false);
   const [wizardStep, setWizardStep] = useState<WizardStep>(1);
   const [activeTab, setActiveTab] = useState<"booking" | "trips">("trips");
@@ -34,7 +35,7 @@ export default function BookingPage() {
     isMLC: false,
     firNumber: "",
     policeStation: "",
-    pickupAddress: "City General Hospital, 123 MG Road, Koramangala, Bangalore",
+    pickupAddress: `${user?.hospitalName || "City General Hospital"}, 123 MG Road, Koramangala, Bangalore`,
     landmark: "",
     selectedVehicle: "",
     autoDispatch: true,
@@ -70,7 +71,7 @@ export default function BookingPage() {
       isMLC: false,
       firNumber: "",
       policeStation: "",
-      pickupAddress: "City General Hospital, 123 MG Road, Koramangala, Bangalore",
+      pickupAddress: `${user?.hospitalName || "City General Hospital"}, 123 MG Road, Koramangala, Bangalore`,
       landmark: "",
       selectedVehicle: "",
       autoDispatch: true,

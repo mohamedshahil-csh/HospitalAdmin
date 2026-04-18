@@ -4,11 +4,11 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { mockHospital } from "@/lib/mock-data";
-import { useAuthStore } from "@/hooks/useAuth";
+import { useAuthStore, useAuth } from "@/hooks/useAuth";
 import {
   Building2, MapPin, Phone, Mail, User, Bed, Save,
   Plus, X, Settings, Bell, Video, Shield, ToggleLeft,
-  ToggleRight, CheckCircle, Upload, Lock
+  ToggleRight, CheckCircle, Upload, Lock, Eye, EyeOff
 } from "lucide-react";
 import toast from "react-hot-toast";
 export default function SettingsPage() {
@@ -28,6 +28,12 @@ function SettingsContent() {
   const [hospital, setHospital] = useState(mockHospital);
   const [editMode, setEditMode] = useState(false);
   const searchParams = useSearchParams();
+
+  const { user, fetchProfile } = useAuth();
+  
+  useEffect(() => {
+    fetchProfile();
+  }, []);
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -74,7 +80,7 @@ function SettingsContent() {
                 <Building2 className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">{hospital.name}</h2>
+                <h2 className="text-xl font-bold text-gray-900">{user?.hospitalName || user?.fullName || hospital.name}</h2>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="badge bg-blue-100 text-blue-700">{hospital.type}</span>
                   {hospital.nabhAccredited && <span className="badge bg-green-100 text-green-700">✓ NABH Accredited</span>}
@@ -94,13 +100,13 @@ function SettingsContent() {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <FieldEdit label="Hospital Name" value={hospital.name} editable={editMode} />
-            <FieldEdit label="Type" value={hospital.type} editable={editMode} />
-            <div className="col-span-2"><FieldEdit label="Address" value={hospital.address} editable={editMode} /></div>
-            <FieldEdit label="Emergency Phone" value={hospital.emergencyPhone} editable={editMode} />
-            <FieldEdit label="Medical Director" value={hospital.medicalDirector} editable={editMode} />
-            <FieldEdit label="Email" value={hospital.email} editable={editMode} />
-            <FieldEdit label="GPS Coordinates" value={`${hospital.gpsCoordinates.lat}, ${hospital.gpsCoordinates.lng}`} editable={false} />
+            <FieldEdit label="Hospital Name" value={user?.hospitalName || hospital.name} editable={editMode} />
+            <FieldEdit label="Type" value={"null"} editable={editMode} />
+            <div className="col-span-2"><FieldEdit label="Address" value={"null"} editable={editMode} /></div>
+            <FieldEdit label="Emergency Phone" value={"null"} editable={editMode} />
+            <FieldEdit label="Medical Director" value={"null"} editable={editMode} />
+            <FieldEdit label="Email" value={user?.email || hospital.email} editable={editMode} />
+            <FieldEdit label="GPS Coordinates" value={"null, null"} editable={false} />
           </div>
 
           <div>
@@ -128,30 +134,7 @@ function SettingsContent() {
       )}
 
       {activeTab === "departments" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-900">Department Configuration</h3>
-            <button className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-primary-600"><Plus className="w-4 h-4" /> Add Department</button>
-          </div>
-          <table className="data-table">
-            <thead><tr><th>Department</th><th>Head of Dept</th><th>Beds</th><th>Phone</th><th>Status</th></tr></thead>
-            <tbody>
-              {hospital.departments.map((dept) => (
-                <tr key={dept.id}>
-                  <td className="font-medium">{dept.name}</td>
-                  <td>{dept.headOfDept}</td>
-                  <td>{dept.bedCount}</td>
-                  <td className="font-mono text-xs">{dept.phone}</td>
-                  <td>
-                    <span className={cn("badge", dept.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500")}>
-                      {dept.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DepartmentManagement hospital={hospital} setHospital={setHospital} />
       )}
 
       {activeTab === "fleet" && (
@@ -219,6 +202,9 @@ function PasswordSettings() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -230,8 +216,18 @@ function PasswordSettings() {
       toast.error("New passwords do not match");
       return;
     }
-    if (newPassword.length < 6) {
-      toast.error("New password must be at least 6 characters");
+    
+    // Complex validation
+    const hasUpperCase = /[A-Z]/.test(newPassword);
+    const hasNumber = /[0-9]/.test(newPassword);
+    const hasSpecialChar = /[!@#$%^&*]/.test(newPassword);
+    
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (!hasUpperCase || !hasNumber || !hasSpecialChar) {
+      toast.error("Password must include at least one uppercase letter, one number, and one special character (!@#$%^&*)");
       return;
     }
 
@@ -263,35 +259,62 @@ function PasswordSettings() {
       <form onSubmit={handleUpdatePassword} className="max-w-md space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Current Password</label>
-          <input
-            type="password"
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm"
-            placeholder="••••••••"
-          />
+          <div className="relative">
+            <input
+              type={showCurrent ? "text" : "password"}
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="w-full px-4 py-2 pr-10 rounded-xl border border-gray-300 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm"
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              onClick={() => setShowCurrent(!showCurrent)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+            >
+              {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 pt-2">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">New Password</label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm"
-              placeholder="Min. 6 characters"
-            />
+            <div className="relative">
+              <input
+                type={showNew ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-4 py-2 pr-10 rounded-xl border border-gray-300 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm"
+                placeholder="Min. 8 characters"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNew(!showNew)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirm New Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                type={showConfirm ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-4 py-2 pr-10 rounded-xl border border-gray-300 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -496,6 +519,114 @@ function FieldEdit({ label, value, editable }: { label: string; value: string; e
       ) : (
         <p className="text-sm font-medium text-gray-900 py-2">{value}</p>
       )}
+    </div>
+  );
+}
+
+function DepartmentManagement({ hospital, setHospital }: { hospital: any; setHospital: any }) {
+  const [showModal, setShowModal] = useState(false);
+  const [newDept, setNewDept] = useState({ name: "", head: "", beds: "", phone: "" });
+
+  const handleAddDept = () => {
+    if (!newDept.name || !newDept.head) {
+      toast.error("Please fill in department name and head");
+      return;
+    }
+    const dept = {
+      id: `DEPT${String(hospital.departments.length + 1).padStart(3, "0")}`,
+      name: newDept.name,
+      headOfDept: newDept.head,
+      bedCount: parseInt(newDept.beds) || 0,
+      phone: newDept.phone,
+      isActive: true
+    };
+    setHospital({ ...hospital, departments: [...hospital.departments, dept] });
+    setShowModal(false);
+    setNewDept({ name: "", head: "", beds: "", phone: "" });
+    toast.success("Department added successfully");
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/30">
+        <div>
+          <h3 className="font-bold text-gray-900">Hospital Departments</h3>
+          <p className="text-xs text-gray-500">Configure clinical departments and bed capacities</p>
+        </div>
+        <button onClick={() => setShowModal(true)} className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-primary-600 shadow-sm transition-all active:scale-95">
+          <Plus className="w-4 h-4" /> Add Department
+        </button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="data-table">
+          <thead className="bg-gray-50/50 italic">
+            <tr><th>Department Name</th><th>Head of Dept</th><th>Bed Count</th><th>Contact Ext.</th><th>Status</th></tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {hospital.departments.map((dept: any) => (
+              <tr key={dept.id} className="hover:bg-gray-50/30">
+                <td className="font-bold text-gray-800">{dept.name}</td>
+                <td className="text-gray-600">{dept.headOfDept}</td>
+                <td className="font-mono text-primary font-bold">{dept.bedCount}</td>
+                <td className="font-mono text-xs text-gray-500">{dept.phone}</td>
+                <td>
+                  <span className={cn("badge", dept.isActive ? "bg-green-100 text-green-700 font-bold" : "bg-gray-100 text-gray-500")}>
+                    {dept.isActive ? "Active" : "Inactive"}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md animate-modal-in overflow-hidden border border-gray-100">
+            <div className="px-6 py-4 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
+              <h3 className="font-bold text-gray-900">New Department</h3>
+              <button onClick={() => setShowModal(false)} className="p-1 rounded-lg hover:bg-gray-200"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Department Name</label><input type="text" value={newDept.name} onChange={e => setNewDept({...newDept, name: e.target.value})} className="form-input-premium" placeholder="e.g. Critical Care" /></div>
+              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Head of Department</label><input type="text" value={newDept.head} onChange={e => setNewDept({...newDept, head: e.target.value})} className="form-input-premium" placeholder="e.g. Dr. Sarah Connor" /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Total Beds</label><input type="number" value={newDept.beds} onChange={e => setNewDept({...newDept, beds: e.target.value})} className="form-input-premium" placeholder="0" /></div>
+                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Contact Phone</label><input type="tel" value={newDept.phone} onChange={e => setNewDept({...newDept, phone: e.target.value})} className="form-input-premium" placeholder="+91..." /></div>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-50 bg-gray-50/30 flex gap-3">
+              <button onClick={handleAddDept} className="flex-1 bg-primary text-white py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 hover:brightness-110 transition-all">Create Department</button>
+              <button onClick={() => setShowModal(false)} className="px-4 py-2.5 border border-gray-200 rounded-xl font-bold text-gray-500 hover:bg-white">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+      <style jsx>{`
+        .form-input-premium {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          border-radius: 1rem;
+          border: 1px solid #E2E8F0;
+          font-size: 0.875rem;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          outline: none;
+          color: #1A202C;
+          background-color: #F8FAFC;
+        }
+        .form-input-premium:focus {
+          border-color: var(--primary);
+          background-color: white;
+          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+        .animate-modal-in {
+          animation: modal-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes modal-in {
+          from { opacity: 0; transform: scale(0.95) translateY(10px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

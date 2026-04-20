@@ -362,10 +362,13 @@ export interface Hospital {
 export interface Department {
   id: string;
   name: string;
-  headOfDept: string;
-  bedCount: number;
-  phone: string;
-  isActive: boolean;
+  headOfDepartment: string;
+  totalBedsCapacity: number;
+  contactPhone: string;
+  hospitalId: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface BedCapacity {

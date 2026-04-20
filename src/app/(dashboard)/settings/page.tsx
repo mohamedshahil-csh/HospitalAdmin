@@ -8,7 +8,7 @@ import { useAuthStore, useAuth } from "@/hooks/useAuth";
 import {
   Building2, MapPin, Phone, Mail, User, Bed, Save,
   Plus, X, Settings, Bell, Video, Shield, ToggleLeft,
-  ToggleRight, CheckCircle, Upload, Lock, Eye, EyeOff
+  ToggleRight, CheckCircle, Upload, Lock, Eye, EyeOff, Search, Edit2, Trash2
 } from "lucide-react";
 import toast from "react-hot-toast";
 export default function SettingsPage() {
@@ -134,7 +134,7 @@ function SettingsContent() {
       )}
 
       {activeTab === "departments" && (
-        <DepartmentManagement hospital={hospital} setHospital={setHospital} />
+        <DepartmentManagement />
       )}
 
       {activeTab === "fleet" && (
@@ -523,59 +523,187 @@ function FieldEdit({ label, value, editable }: { label: string; value: string; e
   );
 }
 
-function DepartmentManagement({ hospital, setHospital }: { hospital: any; setHospital: any }) {
+function DepartmentManagement() {
+  const { user, fetchDepartments, createDepartment, updateDepartment, deleteDepartment } = useAuth();
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [newDept, setNewDept] = useState({ name: "", head: "", beds: "", phone: "" });
+  const [editingDept, setEditingDept] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    headOfDepartment: "",
+    totalBedsCapacity: "",
+    contactPhone: ""
+  });
 
-  const handleAddDept = () => {
-    if (!newDept.name || !newDept.head) {
+  const loadDepartments = async (search?: string) => {
+    setIsLoading(true);
+    const { success, data } = await fetchDepartments(search);
+    if (success && data) {
+      setDepartments(data);
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadDepartments();
+  }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadDepartments(searchQuery);
+  };
+
+  const openModal = (dept: any = null) => {
+    if (dept) {
+      setEditingDept(dept);
+      setFormData({
+        name: dept.name,
+        headOfDepartment: dept.headOfDepartment,
+        totalBedsCapacity: String(dept.totalBedsCapacity),
+        contactPhone: dept.contactPhone
+      });
+    } else {
+      setEditingDept(null);
+      setFormData({
+        name: "",
+        headOfDepartment: "",
+        totalBedsCapacity: "",
+        contactPhone: ""
+      });
+    }
+    setShowModal(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.headOfDepartment) {
       toast.error("Please fill in department name and head");
       return;
     }
-    const dept = {
-      id: `DEPT${String(hospital.departments.length + 1).padStart(3, "0")}`,
-      name: newDept.name,
-      headOfDept: newDept.head,
-      bedCount: parseInt(newDept.beds) || 0,
-      phone: newDept.phone,
-      isActive: true
+
+    setIsSubmitting(true);
+    const payload: any = {
+      name: formData.name,
+      headOfDepartment: formData.headOfDepartment,
+      totalBedsCapacity: parseInt(formData.totalBedsCapacity) || 0,
+      contactPhone: formData.contactPhone
     };
-    setHospital({ ...hospital, departments: [...hospital.departments, dept] });
-    setShowModal(false);
-    setNewDept({ name: "", head: "", beds: "", phone: "" });
-    toast.success("Department added successfully");
+
+    if (!editingDept) {
+      payload.hospitalId = user?.hospitalId;
+    }
+
+    if (editingDept) {
+      const { success, message } = await updateDepartment(editingDept.id, payload);
+      if (success) {
+        toast.success(message || "Department updated successfully");
+        setShowModal(false);
+        loadDepartments();
+      } else {
+        toast.error(message || "Failed to update department");
+      }
+    } else {
+      const { success, message } = await createDepartment(payload);
+      if (success) {
+        toast.success(message || "Department added successfully");
+        setShowModal(false);
+        setFormData({ name: "", headOfDepartment: "", totalBedsCapacity: "", contactPhone: "" });
+        loadDepartments();
+      } else {
+        toast.error(message || "Failed to create department");
+      }
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete the ${name} department?`)) {
+      const { success, message } = await deleteDepartment(id);
+      if (success) {
+        toast.success(message || "Department deleted successfully");
+        loadDepartments();
+      } else {
+        toast.error(message || "Failed to delete department");
+      }
+    }
   };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/30">
+      <div className="flex flex-col md:flex-row md:items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/30 gap-4">
         <div>
           <h3 className="font-bold text-gray-900">Hospital Departments</h3>
           <p className="text-xs text-gray-500">Configure clinical departments and bed capacities</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-primary-600 shadow-sm transition-all active:scale-95">
-          <Plus className="w-4 h-4" /> Add Department
-        </button>
+        <div className="flex items-center gap-3">
+          <form onSubmit={handleSearch} className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input 
+              type="text" 
+              placeholder="Search departments..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:border-primary outline-none w-48 md:w-64 transition-all"
+            />
+          </form>
+          <button onClick={() => openModal()} className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-primary-600 shadow-sm transition-all active:scale-95">
+            <Plus className="w-4 h-4" /> Add New
+          </button>
+        </div>
       </div>
+
       <div className="overflow-x-auto">
         <table className="data-table">
           <thead className="bg-gray-50/50 italic">
-            <tr><th>Department Name</th><th>Head of Dept</th><th>Bed Count</th><th>Contact Ext.</th><th>Status</th></tr>
+            <tr>
+              <th>Department Name</th>
+              <th>Head of Dept</th>
+              <th>Bed Count</th>
+              <th>Contact Phone</th>
+              <th className="text-right">Actions</th>
+            </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {hospital.departments.map((dept: any) => (
-              <tr key={dept.id} className="hover:bg-gray-50/30">
-                <td className="font-bold text-gray-800">{dept.name}</td>
-                <td className="text-gray-600">{dept.headOfDept}</td>
-                <td className="font-mono text-primary font-bold">{dept.bedCount}</td>
-                <td className="font-mono text-xs text-gray-500">{dept.phone}</td>
-                <td>
-                  <span className={cn("badge", dept.isActive ? "bg-green-100 text-green-700 font-bold" : "bg-gray-100 text-gray-500")}>
-                    {dept.isActive ? "Active" : "Inactive"}
-                  </span>
-                </td>
+            {isLoading ? (
+              [1, 2, 3].map((i) => (
+                <tr key={i} className="animate-pulse">
+                  <td colSpan={5} className="py-4 px-6"><div className="h-4 bg-gray-100 rounded w-full"></div></td>
+                </tr>
+              ))
+            ) : departments.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="py-12 text-center text-gray-400">No departments found</td>
               </tr>
-            ))}
+            ) : (
+              departments.map((dept: any) => (
+                <tr key={dept.id} className="hover:bg-gray-50/30">
+                  <td className="font-bold text-gray-800">{dept.name}</td>
+                  <td className="text-gray-600">{dept.headOfDepartment}</td>
+                  <td className="font-mono text-primary font-bold">{dept.totalBedsCapacity}</td>
+                  <td className="font-mono text-xs text-gray-500">{dept.contactPhone}</td>
+                  <td className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button 
+                        onClick={() => openModal(dept)}
+                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(dept.id, dept.name)}
+                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -584,19 +712,61 @@ function DepartmentManagement({ hospital, setHospital }: { hospital: any; setHos
         <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md animate-modal-in overflow-hidden border border-gray-100">
             <div className="px-6 py-4 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
-              <h3 className="font-bold text-gray-900">New Department</h3>
+              <h3 className="font-bold text-gray-900">{editingDept ? "Edit Department" : "New Department"}</h3>
               <button onClick={() => setShowModal(false)} className="p-1 rounded-lg hover:bg-gray-200"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-6 space-y-4">
-              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Department Name</label><input type="text" value={newDept.name} onChange={e => setNewDept({...newDept, name: e.target.value})} className="form-input-premium" placeholder="e.g. Critical Care" /></div>
-              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Head of Department</label><input type="text" value={newDept.head} onChange={e => setNewDept({...newDept, head: e.target.value})} className="form-input-premium" placeholder="e.g. Dr. Sarah Connor" /></div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Department Name</label>
+                <input 
+                  type="text" 
+                  value={formData.name} 
+                  onChange={e => setFormData({...formData, name: e.target.value})} 
+                  className="form-input-premium" 
+                  placeholder="e.g. Critical Care" 
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Head of Department</label>
+                <input 
+                  type="text" 
+                  value={formData.headOfDepartment} 
+                  onChange={e => setFormData({...formData, headOfDepartment: e.target.value})} 
+                  className="form-input-premium" 
+                  placeholder="e.g. Dr. Sarah Connor" 
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Total Beds</label><input type="number" value={newDept.beds} onChange={e => setNewDept({...newDept, beds: e.target.value})} className="form-input-premium" placeholder="0" /></div>
-                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Contact Phone</label><input type="tel" value={newDept.phone} onChange={e => setNewDept({...newDept, phone: e.target.value})} className="form-input-premium" placeholder="+91..." /></div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Total Beds</label>
+                  <input 
+                    type="number" 
+                    value={formData.totalBedsCapacity} 
+                    onChange={e => setFormData({...formData, totalBedsCapacity: e.target.value})} 
+                    className="form-input-premium" 
+                    placeholder="0" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Contact Phone</label>
+                  <input 
+                    type="tel" 
+                    value={formData.contactPhone} 
+                    onChange={e => setFormData({...formData, contactPhone: e.target.value})} 
+                    className="form-input-premium" 
+                    placeholder="+91..." 
+                  />
+                </div>
               </div>
             </div>
             <div className="px-6 py-4 border-t border-gray-50 bg-gray-50/30 flex gap-3">
-              <button onClick={handleAddDept} className="flex-1 bg-primary text-white py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 hover:brightness-110 transition-all">Create Department</button>
+              <button 
+                onClick={handleSubmit} 
+                disabled={isSubmitting}
+                className="flex-1 bg-primary text-white py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 hover:brightness-110 transition-all disabled:opacity-50"
+              >
+                {isSubmitting ? (editingDept ? "Updating..." : "Creating...") : (editingDept ? "Save Changes" : "Create Department")}
+              </button>
               <button onClick={() => setShowModal(false)} className="px-4 py-2.5 border border-gray-200 rounded-xl font-bold text-gray-500 hover:bg-white">Cancel</button>
             </div>
           </div>

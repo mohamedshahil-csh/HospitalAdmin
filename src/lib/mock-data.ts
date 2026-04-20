@@ -59,12 +59,12 @@ export const mockHospital: Hospital = {
   medicalDirector: "Dr. Suresh Menon",
   email: "admin@cityhospital.in",
   departments: [
-    { id: "DEPT001", name: "Emergency Medicine", headOfDept: "Dr. Vinod Rao", bedCount: 30, phone: "+91 80 2553 4001", isActive: true },
-    { id: "DEPT002", name: "ICU", headOfDept: "Dr. Meera Patel", bedCount: 20, phone: "+91 80 2553 4002", isActive: true },
-    { id: "DEPT003", name: "Trauma Centre", headOfDept: "Dr. Arun Nair", bedCount: 15, phone: "+91 80 2553 4003", isActive: true },
-    { id: "DEPT004", name: "Burns Unit", headOfDept: "Dr. Kavitha S", bedCount: 10, phone: "+91 80 2553 4004", isActive: true },
-    { id: "DEPT005", name: "Cardiac Care", headOfDept: "Dr. Ramesh Gupta", bedCount: 25, phone: "+91 80 2553 4005", isActive: true },
-    { id: "DEPT006", name: "Paediatrics", headOfDept: "Dr. Sunita Rao", bedCount: 20, phone: "+91 80 2553 4006", isActive: false },
+    { id: "DEPT001", name: "Emergency Medicine", headOfDepartment: "Dr. Vinod Rao", totalBedsCapacity: 30, contactPhone: "+91 80 2553 4001", hospitalId: "HOSP001", isActive: true },
+    { id: "DEPT002", name: "ICU", headOfDepartment: "Dr. Meera Patel", totalBedsCapacity: 20, contactPhone: "+91 80 2553 4002", hospitalId: "HOSP001", isActive: true },
+    { id: "DEPT003", name: "Trauma Centre", headOfDepartment: "Dr. Arun Nair", totalBedsCapacity: 15, contactPhone: "+91 80 2553 4003", hospitalId: "HOSP001", isActive: true },
+    { id: "DEPT004", name: "Burns Unit", headOfDepartment: "Dr. Kavitha S", totalBedsCapacity: 10, contactPhone: "+91 80 2553 4004", hospitalId: "HOSP001", isActive: true },
+    { id: "DEPT005", name: "Cardiac Care", headOfDepartment: "Dr. Ramesh Gupta", totalBedsCapacity: 25, contactPhone: "+91 80 2553 4005", hospitalId: "HOSP001", isActive: true },
+    { id: "DEPT006", name: "Paediatrics", headOfDepartment: "Dr. Sunita Rao", totalBedsCapacity: 20, contactPhone: "+91 80 2553 4006", hospitalId: "HOSP001", isActive: false },
   ],
   bedCapacity: {
     emergency: { total: 30, available: 12 },

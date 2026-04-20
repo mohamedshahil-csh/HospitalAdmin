@@ -23,6 +23,10 @@ interface AuthStore extends AuthState {
   createStaff: (staffData: any) => Promise<{ success: boolean; message?: string }>;
   fetchStaff: (role?: string) => Promise<{ success: boolean; data?: any[]; message?: string }>;
   fetchProfile: () => Promise<{ success: boolean; data?: any; message?: string }>;
+  fetchDepartments: (search?: string) => Promise<{ success: boolean; data?: any[]; message?: string }>;
+  createDepartment: (deptData: any) => Promise<{ success: boolean; message?: string }>;
+  updateDepartment: (id: string, deptData: any) => Promise<{ success: boolean; message?: string }>;
+  deleteDepartment: (id: string) => Promise<{ success: boolean; message?: string }>;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -372,6 +376,110 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return { success: false, message: "Network error occurred while fetching profile" };
     }
   },
+
+  fetchDepartments: async (search?: string) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://teleems-api-gateway.onrender.com";
+      let url = `${baseUrl}/v1/hospital/departments`;
+      if (search) {
+        url += `?search=${encodeURIComponent(search)}`;
+      }
+      
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { 
+          "Authorization": `Bearer ${token}`
+        },
+      });
+      const result = await response.json();
+      
+      if (response.ok || result.status === 200) {
+        return { success: true, data: result.data };
+      }
+      
+      return { success: false, message: result.message || "Failed to fetch departments" };
+    } catch (error) {
+      console.error("Fetch departments error:", error);
+      return { success: false, message: "Network error occurred while fetching departments" };
+    }
+  },
+
+  createDepartment: async (deptData: any) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://teleems-api-gateway.onrender.com";
+      const response = await fetch(`${baseUrl}/v1/hospital/departments`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(deptData),
+      });
+      const result = await response.json();
+      
+      if (response.ok || result.status === 201 || result.status === 200) {
+        return { success: true, message: result.message || "Department created successfully" };
+      }
+      
+      const errorMessage = result.error?.details?.[0] || result.error?.message || result.message || "Failed to create department";
+      return { success: false, message: errorMessage };
+    } catch (error) {
+      console.error("Create department error:", error);
+      return { success: false, message: "A server error occurred while creating department." };
+    }
+  },
+
+  updateDepartment: async (id: string, deptData: any) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://teleems-api-gateway.onrender.com";
+      const response = await fetch(`${baseUrl}/v1/hospital/departments/${id}`, {
+        method: "PATCH",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(deptData),
+      });
+      const result = await response.json();
+      
+      if (response.ok || result.status === 200) {
+        return { success: true, message: result.message || "Department updated successfully" };
+      }
+      
+      const errorMessage = result.error?.details?.[0] || result.error?.message || result.message || "Failed to update department";
+      return { success: false, message: errorMessage };
+    } catch (error) {
+      console.error("Update department error:", error);
+      return { success: false, message: "A server error occurred while updating department." };
+    }
+  },
+
+  deleteDepartment: async (id: string) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://teleems-api-gateway.onrender.com";
+      const response = await fetch(`${baseUrl}/v1/hospital/departments/${id}`, {
+        method: "DELETE",
+        headers: { 
+          "Authorization": `Bearer ${token}`
+        },
+      });
+      const result = await response.json();
+      
+      if (response.ok || result.status === 200) {
+        return { success: true, message: result.message || "Department deleted successfully" };
+      }
+      
+      return { success: false, message: result.message || "Failed to delete department" };
+    } catch (error) {
+      console.error("Delete department error:", error);
+      return { success: false, message: "A server error occurred while deleting department." };
+    }
+  },
+
 }));
 
 // Hook for role-based access
